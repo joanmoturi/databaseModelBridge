@@ -1,0 +1,51 @@
+name: Foundation checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.11-bookworm
+        env:
+          POSTGRES_USER: modelbridge
+          POSTGRES_PASSWORD: ci-disposable-password-not-a-secret
+          POSTGRES_DB: modelbridge_test_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U modelbridge -d modelbridge_test_ci"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      MODELBRIDGE_TEST_DATABASE_URL: postgresql+psycopg://modelbridge:ci-disposable-password-not-a-secret@127.0.0.1:5432/modelbridge_test_ci
+      MODELBRIDGE_TEST_ALLOW_DATABASE_WRITES: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.6"
+      - run: uv venv --python 3.12
+      - run: uv pip sync --require-hashes requirements-dev.lock
+      - run: uv pip install --no-deps -e .
+      - run: uv run --no-sync ruff check .
+      - run: uv run --no-sync ruff format --check .
+      - run: uv run --no-sync mypy
+      - run: uv run --no-sync pytest -q
+      - run: uv build
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26.13.0"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build

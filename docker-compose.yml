@@ -1,0 +1,73 @@
+name: modelbridge
+x-app-environment: &app-environment
+  MODELBRIDGE_DATABASE_URL: postgresql+psycopg://modelbridge:${MODELBRIDGE_DB_PASSWORD:?Run configure.py}@metadata:5432/modelbridge
+  MODELBRIDGE_ENCRYPTION_KEYS: ${MODELBRIDGE_ENCRYPTION_KEYS:?Run configure.py}
+  MODELBRIDGE_ENVIRONMENT: development
+  MODELBRIDGE_CORS_ORIGINS: '["http://localhost:3000"]'
+  MODELBRIDGE_WORKER_ID: worker-1
+services:
+  metadata:
+    image: postgres:17.11-bookworm
+    environment:
+      POSTGRES_USER: modelbridge
+      POSTGRES_DB: modelbridge
+      POSTGRES_PASSWORD: ${MODELBRIDGE_DB_PASSWORD:?Run configure.py}
+    volumes:
+      - metadata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U modelbridge -d modelbridge"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  upgrade:
+    build: .
+    environment: *app-environment
+    command: ["modelbridge", "db", "upgrade"]
+    depends_on:
+      metadata:
+        condition: service_healthy
+  api:
+    build: .
+    environment: *app-environment
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      upgrade:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 10
+    restart: unless-stopped
+  worker:
+    build: .
+    environment: *app-environment
+    command: ["python", "-m", "modelbridge.worker"]
+    depends_on:
+      upgrade:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "modelbridge", "ready"]
+      interval: 10s
+      timeout: 6s
+      retries: 5
+    restart: unless-stopped
+  dashboard:
+    build: ./frontend
+    environment:
+      MODELBRIDGE_API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+volumes:
+  metadata:

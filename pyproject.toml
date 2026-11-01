@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "modelbridge"
+version = "0.1.0.dev1"
+description = "Application-data migration platform (development in progress)"
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+license = "MIT"
+dependencies = [
+  "alembic==1.20.1",
+  "cryptography==50.0.2",
+  "fastapi==0.162.0",
+  "httpx==0.28.1",
+  "psycopg[binary]==3.3.6",
+  "pydantic==2.14.1",
+  "pydantic-settings==2.16.1",
+  "sqlalchemy==2.1.6",
+  "typer==0.27.3",
+  "uvicorn==0.54.0",
+]
+
+[project.scripts]
+modelbridge = "modelbridge.cli:app"
+
+[dependency-groups]
+dev = [
+  "hypothesis==6.170.9",
+  "mypy==2.4.1",
+  "pytest==9.1.1",
+  "ruff==0.17.3",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend/modelbridge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: requires an explicitly authorized disposable PostgreSQL database"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["backend/modelbridge"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["modelbridge"]
