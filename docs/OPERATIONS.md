@@ -33,7 +33,8 @@ restore. These instructions require an executed recovery test before release.
 `/health` checks API liveness only. `/ready` checks current metadata schema and
 configured worker freshness. Missing/stopped/stale worker yields 503. Use
 `modelbridge ready` for JSON and a nonzero failure code. Worker retries heartbeat
-on database errors; it does not retry migration jobs (not implemented).
+on database errors and executes durable jobs with bounded connection retries.
+See BACKGROUND_JOBS.md for cancellation, checkpoints, manual retries and recovery.
 
 `docker compose logs api worker upgrade` shows fixed structured events. Access
 logs are disabled to avoid logging request inputs. Correlation ID appears in

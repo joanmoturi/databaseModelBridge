@@ -63,7 +63,7 @@ class Database:
             )
             worker_ok = (
                 heartbeat is not None
-                and heartbeat.state == "idle"
+                and heartbeat.state in {"idle", "running"}
                 and (datetime.now(UTC) - heartbeat.seen_at).total_seconds() <= stale_seconds
             )
         return {"metadata_database": database_ok, "worker": worker_ok}

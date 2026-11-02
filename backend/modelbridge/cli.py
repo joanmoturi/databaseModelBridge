@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 from modelbridge import __version__
+from modelbridge.application.authentication import AuthenticationService
 from modelbridge.application.workspaces import WorkspaceService
 from modelbridge.domain.access import ResourceConflict
 from modelbridge.infrastructure.config import Settings
@@ -21,6 +22,24 @@ from modelbridge.infrastructure.database import (
 app = typer.Typer(no_args_is_help=True, help="ModelBridge development administration.")
 db = typer.Typer(no_args_is_help=True)
 app.add_typer(db, name="db")
+
+
+@app.command()
+def registration_code(email: str = typer.Option(..., "--email")) -> None:
+    """Issue one-hour email-bound proof; deliver privately to its verified recipient."""
+    try:
+        settings = Settings()
+        engine = create_metadata_engine(settings)
+        try:
+            require_schema(engine)
+            code = AuthenticationService(Database(engine), settings).issue_registration_code(email)
+        finally:
+            engine.dispose()
+    except (SQLAlchemyError, ValidationError, RuntimeError, ValueError):
+        typer.echo("Registration-code issuance failed.", err=True)
+        raise typer.Exit(1) from None
+    typer.echo("Deliver privately to the verified email recipient; expires in one hour:")
+    typer.echo(code)
 
 
 @app.command()

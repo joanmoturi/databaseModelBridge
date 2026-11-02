@@ -1,10 +1,14 @@
 # ModelBridge
 
 Application-data migration and reconciliation platform, **development in progress**.
-The runnable foundation has a PostgreSQL metadata database, API, scoped workspace
-credentials, audit events, heartbeat worker, CLI and live status dashboard.
-**Data migration and database connectors are not implemented yet. Do not use with
-production/customer databases.** See `docs/IMPLEMENTATION_STATUS.md` for evidence.
+The application has a PostgreSQL metadata database, API, scoped workspace
+credentials, audit events, durable worker, CLI and live status dashboard.
+Accounts, scoped API keys, encrypted PostgreSQL connections and read-only schema
+discovery, approved mappings, real PostgreSQL transfers, dry/sample/full jobs,
+recovery, independent reconciliation and signed webhooks are implemented and
+native integration tested. **Clean Compose acceptance remains blocked. Do not use
+with production/customer databases.** See `docs/API_ACCEPTANCE_REPORT.md` for
+current API evidence and gaps.
 The thirteen original root reports are historical assessments, preserved unchanged.
 
 ## Requirements
@@ -13,7 +17,7 @@ Development: Python 3.12-3.14, uv 0.13.6, Node 26.13.0/npm 11, PostgreSQL 17,
 or Docker Engine/Desktop with Compose v2 for the local Compose profile.
 Application containers target Linux; native Windows development uses PowerShell.
 Docker Desktop/VM configuration is an operator prerequisite, not installed by scripts.
-No Redis is required by the heartbeat-only foundation. Remote deployment and
+No Redis is required: PostgreSQL provides the queue/outbox. Remote deployment and
 production security acceptance are not yet supported or verified.
 
 ## Docker local deployment
@@ -38,7 +42,8 @@ Compose starts metadata PostgreSQL, an explicit one-shot schema upgrade, API,
 worker and dashboard. Published ports bind to loopback. Data lives in the named
 metadata volume; `docker compose down` preserves it. **Do not use `down -v` unless
 you intentionally want to destroy disposable metadata.** No migrations target
-external application databases at this stage.
+external application schemas automatically; approved jobs insert mapped records
+into independently configured databases. Follow `docs/API_QUICKSTART.md`.
 
 ## Native development
 
@@ -64,8 +69,10 @@ npm run dev
 
 The frontend proxies a strict route allowlist to `MODELBRIDGE_API_URL` (default
 `http://127.0.0.1:8000`). Tokens remain in memory, not localStorage. This is a
-single-workspace access-credential foundation, not finished account onboarding.
-The worker writes heartbeat metadata only and does not execute migrations.
+legacy workspace dashboard; account onboarding and connection discovery currently
+use the API/SDK, not the dashboard. See `docs/API_QUICKSTART.md`.
+The worker executes durable migrations and dispatches webhook deliveries.
+Migration controls use the API/SDK; the dashboard is status/access/audit only.
 
 ## Verification
 

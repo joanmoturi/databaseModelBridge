@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("dashboard uses real proxied service responses and masked workspace access", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Service health" })).toBeVisible();
-  await expect(page.getByText("Fresh · idle")).toBeVisible();
+  await expect(page.getByText("Fresh · available")).toBeVisible();
   await expect(page.getByLabel("Owner access credential")).toHaveAttribute("type", "password");
   const token = process.env.MODELBRIDGE_E2E_TOKEN;
   if (!token) throw new Error("Set a generated disposable workspace token for live browser testing");

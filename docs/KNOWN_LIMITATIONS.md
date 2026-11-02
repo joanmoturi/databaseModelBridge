@@ -1,32 +1,32 @@
 # Known limitations
 
-Development in progress. No data migration functionality exists yet. The worker
-is heartbeat-only. Dashboard is foundation status/workspace UI, not a completed
-migration workflow. No connector is certified; live Supabase is not tested.
+Real PostgreSQL migration, durable recovery, reconciliation and signed webhooks
+are native integration tested. **Not production-ready:** clean container
+build/start acceptance is blocked by the local Docker backend. No other connector
+is certified. PostgreSQL 17.11 is the only database version actually exercised.
+See MIGRATION_EXECUTION.md for the deliberately narrow scalar/single-key/DAG
+profile and dry-run/server-constraint boundaries.
 
-No native database fallback: PostgreSQL is required. Docker/VM acceptance depends
-on a usable runtime. Native Windows development testing is not isolated release
-acceptance. No production, distributed-worker or universal compatibility claim.
+The dashboard shows status/workspaces/audit, not a guided migration editor.
+Automatic recommendations, standalone transformation preview, CDC, cyclic or
+composite relationships, rich/custom types, schema creation and destructive
+overwrite are absent. Explicit reconciliation is synchronous. Sample migrations
+do not automatically expand parent closure.
 
-Native foundation validated with Python 3.12.16, PostgreSQL 17.11, Node 26.13.0 and
-Next.js 16.4.3. Container image references are version tags, not digest-pinned
-release artifacts. Docker images, Linux and clean-room Compose have not been tested.
-Hosted CI and public-network installation remain unverified. Requirement hashes
-were checked against public PyPI; current host downloads require an approved mirror.
-Push preparation removed environment-specific npm artifact URLs while preserving
-the original exact versions and integrity records. That npm metadata contains
-legacy SHA-1 entries; public-registry regeneration with stronger artifact hashes
-and clean npm installation remain release-packaging checks. Public npm TLS access
-failed on this host; certificate verification was not disabled.
+No distributed transaction/exactly-once guarantee. Sources must be quiescent;
+destination triggers must not have non-idempotent external side effects.
+1,000-row recovery coverage is not a large-dataset benchmark. Drivers may
+materialize an oversized source row before the engine rejects its size.
 
-Scoped opaque access credentials are the current authentication interface.
-Account/session management, credential issuance/revocation/expiration UI,
-per-user workspace memberships, rate limiting and connector network restrictions
-are not implemented. Do not publicly expose the local development profile.
-Crypto key rotation is a tested abstraction, not a completed stored-connection
-rotation workflow. Worker heartbeat is not durable job execution.
+Production TLS, custom CA/mTLS, cloud deployment, proxy-aware rate limiting,
+global concurrency budgets, metadata retention and runtime least-privilege
+database roles remain unverified/incomplete. Account reset/MFA/session
+administration and owner transfer are absent. Do not expose the development
+profile publicly.
 
-The upstream FastAPI/Starlette TestClient currently warns that httpx support is
-deprecated; tests pass without suppressing the warning. Metadata restore testing
-does not establish application-data migration recovery or upgrade compatibility
-between product releases.
+Container base images use version tags, not pinned digests. No image build or
+public-network clean install is certified. This host uses an approved dependency
+mirror; TLS verification was not disabled. Hosted CI has not run for unpublished
+changes. Historical root reports intentionally describe earlier implementation.
+
+The upstream TestClient/httpx deprecation warning remains unsuppressed.

@@ -5,6 +5,7 @@ WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
 COPY pyproject.toml requirements.lock README.md LICENSE ./
 COPY backend ./backend
+COPY docs ./docs
 RUN uv venv /app/.venv && uv pip sync --require-hashes requirements.lock && uv pip install --no-deps .
 RUN useradd --uid 10001 --create-home app
 USER 10001

@@ -2,21 +2,26 @@
 
 import argparse
 import os
+import secrets
 import socket
 import subprocess
 import sys
 import tempfile
 import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
 import httpx
+from pydantic import SecretStr
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 
+from modelbridge.application.authentication import AuthenticationService
 from modelbridge.application.workspaces import WorkspaceService, token_hash
 from modelbridge.infrastructure.config import Settings
 from modelbridge.infrastructure.database import Database, create_metadata_engine, require_schema
+from modelbridge.sdk import ModelBridge
 
 
 def main() -> None:
@@ -24,8 +29,13 @@ def main() -> None:
     parser.add_argument(
         "--browser", action="store_true", help="Run live Playwright dashboard checks"
     )
+    parser.add_argument(
+        "--api-product", action="store_true", help="Verify account SDK contract over real TCP"
+    )
     args = parser.parse_args()
     settings = Settings()
+    if args.api_product and not settings.registration_enabled:
+        raise SystemExit("API product smoke requires explicit registration opt-in")
     if settings.environment != "test":
         raise SystemExit("Smoke requires MODELBRIDGE_ENVIRONMENT=test and disposable metadata")
     url = make_url(settings.database_url.get_secret_value())
@@ -47,6 +57,8 @@ def main() -> None:
     headers = {"Authorization": f"Bearer {token}"}
     root = Path(__file__).resolve().parents[1]
     processes: list[subprocess.Popen[bytes]] = []
+    product_token: SecretStr | None = None
+    product_workspace: str | None = None
     try:
         with tempfile.TemporaryFile() as logs:
             worker = subprocess.Popen(
@@ -97,6 +109,30 @@ def main() -> None:
                     assert actual.json()[0]["id"] == workspace.id
                     assert token not in actual.text
                     assert len(client.get("/api/v1/audit", headers=headers).json()) == 1
+                    if args.api_product:
+                        with ModelBridge(base_url) as sdk:
+                            if iteration == 0:
+                                password = SecretStr(secrets.token_urlsafe(32))
+                                email = uuid4().hex + "@synthetic.example"
+                                code = AuthenticationService(
+                                    Database(engine), settings
+                                ).issue_registration_code(email)
+                                sdk.register(email, password, SecretStr(code))
+                                sdk.login(email, password)
+                                selected = sdk.create_workspace("TCP SDK " + uuid4().hex)
+                                sdk.workspace_id = selected.id
+                                issued = sdk.create_key(
+                                    "TCP SDK reader",
+                                    ["workspace:read"],
+                                    datetime.now(UTC) + timedelta(hours=1),
+                                )
+                                product_token = issued.secret
+                                product_workspace = selected.id
+                                sdk.logout()
+                        with ModelBridge(base_url, token=product_token) as reader:
+                            assert reader.workspaces()[0].id == product_workspace
+                        assert client.get("/api/guides/API_QUICKSTART.md").status_code == 200
+                        print(f"Account/scoped-key SDK TCP lifecycle {iteration + 1}: passed")
                     if args.browser and iteration == 1:
                         environment["MODELBRIDGE_API_URL"] = base_url
                         environment["MODELBRIDGE_E2E_TOKEN"] = token

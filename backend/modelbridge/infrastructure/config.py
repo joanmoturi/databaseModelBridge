@@ -1,4 +1,5 @@
 import base64
+import ipaddress
 from typing import Self
 
 from pydantic import Field, SecretStr, field_validator, model_validator
@@ -19,6 +20,24 @@ class Settings(BaseSettings):
     worker_id: str = Field(default="worker-1", min_length=1, max_length=64, pattern=r"^[\w-]+$")
     heartbeat_seconds: int = Field(default=5, ge=1, le=10)
     worker_stale_seconds: int = Field(default=30, ge=15, le=120)
+    registration_enabled: bool = False
+    session_seconds: int = Field(default=3600, ge=300, le=86400)
+    max_request_bytes: int = Field(default=65536, ge=1024, le=1048576)
+    requests_per_minute: int = Field(default=120, ge=10, le=10000)
+    anonymous_requests_per_minute: int = Field(default=30, ge=5, le=1000)
+    allowed_database_networks: list[str] = Field(default_factory=list)
+    connection_timeout_seconds: int = Field(default=5, ge=1, le=15)
+    max_connections_per_workspace: int = Field(default=10, ge=1, le=100)
+    schema_discoveries_per_minute: int = Field(default=5, ge=1, le=60)
+    max_batch_size: int = Field(default=100, ge=1, le=500)
+    max_active_jobs_per_workspace: int = Field(default=2, ge=1, le=10)
+    job_retry_limit: int = Field(default=3, ge=0, le=5)
+    allowed_webhook_networks: list[str] = Field(default_factory=list)
+
+    @field_validator("allowed_database_networks", "allowed_webhook_networks")
+    @classmethod
+    def check_networks(cls, value: list[str]) -> list[str]:
+        return [str(ipaddress.ip_network(network, strict=False)) for network in value]
 
     @field_validator("database_url")
     @classmethod

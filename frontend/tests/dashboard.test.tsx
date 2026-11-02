@@ -13,14 +13,14 @@ it("shows missing worker as unavailable, not successful", () => {
   expect(screen.getByText("Connected · schema current")).toBeInTheDocument();
 });
 
-it("has masked access input and honestly labels missing migration execution", async () => {
+it("has masked access input and directs migration controls to the API", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
     status: "ready", checks: { metadata_database: true, worker: true },
   }))));
   render(<Dashboard />);
   expect(screen.getByLabelText("Owner access credential")).toHaveAttribute("type", "password");
-  expect(screen.getByText("No migration executor yet.", { exact: false })).toBeInTheDocument();
-  expect(await screen.findByText("Fresh · idle")).toBeInTheDocument();
+  expect(screen.getByText("Migration controls use the API.", { exact: false })).toBeInTheDocument();
+  expect(await screen.findByText("Fresh · available")).toBeInTheDocument();
 });
 
 it("does not retain a ready badge when the API becomes unreachable", async () => {

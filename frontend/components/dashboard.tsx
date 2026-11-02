@@ -13,7 +13,7 @@ export function ServiceStatus({ readiness }: { readiness: Readiness }) {
       <div><h3>Metadata database</h3><p>{readiness.checks.metadata_database ? "Connected · schema current" : "Unavailable"}</p></div>
     </article>
     <article className="service"><span className={readiness.checks.worker ? "dot ok" : "dot"} />
-      <div><h3>Worker heartbeat</h3><p>{readiness.checks.worker ? "Fresh · idle" : "Missing or stale"}</p></div>
+      <div><h3>Worker heartbeat</h3><p>{readiness.checks.worker ? "Fresh · available" : "Missing or stale"}</p></div>
     </article>
   </div>;
 }
@@ -75,19 +75,19 @@ export default function Dashboard() {
       <nav aria-label="Main navigation"><a className="active" href="#overview">Overview</a>
         <a href="#workspace">Workspace access</a><a href="#history">Audit history</a></nav>
       <div className="sidebar-footer"><span className="development">Development</span>
-        <p>Safe foundations first.<br />No migration executor yet.</p></div>
+        <p>PostgreSQL migration engine.<br />Migration controls use the API.</p></div>
     </aside>
     <main id="overview">
       <header><span className="eyebrow">APPLICATION DATA · CONTROL PLANE</span>
         <span className="environment">Local development</span></header>
       <section className="hero"><h1>Your data journey,<br /><span>with evidence at every step.</span></h1>
-        <p>Inspect the real service state and workspace history. Migration capabilities are still being implemented.</p></section>
+        <p>Inspect service state and workspace history. Use the documented API for approved migrations and reconciliation.</p></section>
       <section className="panel" aria-labelledby="services-heading">
         <div className="panel-heading"><h2 id="services-heading">Service health</h2>
           <span className="tag">{readiness?.status === "ready" ? "Ready" : "Not ready"}</span></div>
         {serviceError ? <p role="alert" className="error">{serviceError}</p> :
           readiness ? <ServiceStatus readiness={readiness} /> : <p role="status">Checking API readiness…</p>}
-        <p className="note">Readiness is not release acceptance. The worker currently reports heartbeat only.</p>
+        <p className="note">Readiness is not release acceptance. Workers execute durable jobs; this dashboard displays availability, not migration progress.</p>
       </section>
       <section id="workspace" className="panel">
         <h2>Open your workspace</h2><p className="muted">Run <code>modelbridge bootstrap --name &quot;My workspace&quot;</code> once, then use its owner credential.</p>

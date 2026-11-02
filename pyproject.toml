@@ -36,8 +36,25 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["backend/modelbridge"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"docs/API_REFERENCE.md" = "modelbridge/guides/API_REFERENCE.md"
+"docs/API_QUICKSTART.md" = "modelbridge/guides/API_QUICKSTART.md"
+"docs/API_AUTHENTICATION.md" = "modelbridge/guides/API_AUTHENTICATION.md"
+"docs/API_VERSIONING.md" = "modelbridge/guides/API_VERSIONING.md"
+"docs/WEBHOOKS.md" = "modelbridge/guides/WEBHOOKS.md"
+"docs/SDK_GUIDE.md" = "modelbridge/guides/SDK_GUIDE.md"
+"docs/SELF_HOSTING.md" = "modelbridge/guides/SELF_HOSTING.md"
+"docs/PRODUCTION_DEPLOYMENT.md" = "modelbridge/guides/PRODUCTION_DEPLOYMENT.md"
+"docs/API_SECURITY.md" = "modelbridge/guides/API_SECURITY.md"
+"docs/API_ACCEPTANCE_REPORT.md" = "modelbridge/guides/API_ACCEPTANCE_REPORT.md"
+"docs/MIGRATION_EXECUTION.md" = "modelbridge/guides/MIGRATION_EXECUTION.md"
+"docs/BACKGROUND_JOBS.md" = "modelbridge/guides/BACKGROUND_JOBS.md"
+"docs/RECONCILIATION.md" = "modelbridge/guides/RECONCILIATION.md"
+"docs/DOCKER_DEPLOYMENT.md" = "modelbridge/guides/DOCKER_DEPLOYMENT.md"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = ["integration: requires an explicitly authorized disposable PostgreSQL database"]
 
 [tool.ruff]
